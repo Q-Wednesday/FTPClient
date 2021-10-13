@@ -8,8 +8,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     sessionTab=ui->sessionTab;
-    sessionTab->addTab(new FileExplorer(this),"session1");
-    sessionTab->addTab(new FileExplorer(this),"session2");
+
+    //sessionTab->addTab(new FileExplorer(this),"session1");
+    //sessionTab->addTab(new FileExplorer(this),"session2");
 }
 
 MainWindow::~MainWindow()
@@ -21,7 +22,13 @@ MainWindow::~MainWindow()
 void MainWindow::on_loginButton_clicked()
 {
     LoginDialog* dialog=new LoginDialog(this);
+    connect(dialog,&LoginDialog::LoginSuccess,this,&MainWindow::newSession);
     dialog->exec();
-    sessionTab->removeTab(1);
+    //sessionTab->removeTab(1);
 }
 
+void MainWindow::newSession(ClientCore* client){
+    FileExplorer* explorer=new FileExplorer(this);
+    explorer->bindClient(client);
+    sessionTab->addTab(explorer,"session1");
+}

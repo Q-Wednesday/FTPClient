@@ -15,8 +15,11 @@ FileExplorer::~FileExplorer()
 
 void FileExplorer::on_pushButton_clicked()
 {
-    client=new ClientCore("localhost",21,this);
-    qDebug()<<client->connectServer();
-    qDebug()<<client->commandUSER("anonymous");
+    //client=new ClientCore("localhost",21,this);
+    qDebug()<<client->getState();
+    client->commandLIST();
 }
 
+void FileExplorer::bindClient(ClientCore* clientLogin){
+    client=clientLogin;
+}

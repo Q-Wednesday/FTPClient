@@ -15,6 +15,8 @@ public:
     explicit FileExplorer(QWidget *parent = nullptr);
     ~FileExplorer();
 
+public slots:
+    void bindClient(ClientCore* clientLogin);
 private slots:
     void on_pushButton_clicked();
 
