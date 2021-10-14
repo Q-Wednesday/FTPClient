@@ -33,6 +33,7 @@ signals:
     void fileInfoGeted(QString);
     void pwdGeted(QString);
     void cwdSuccess(bool);
+    void serverReponse(QString);
 private:
     void handleResponse(QString& response);
 private slots:

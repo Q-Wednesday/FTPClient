@@ -48,6 +48,7 @@ void ClientCore::receiveFile(){
 }
 
 void ClientCore::handleResponse(QString &response){
+    emit serverReponse(response);
     if(response.startsWith("220")){
         connectionState=CONNECTED;
         commandUSER();

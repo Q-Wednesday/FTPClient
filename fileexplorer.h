@@ -24,7 +24,8 @@ private slots:
     void showRemoteFileInfo(QString infoReceived);
     void showRemoteWorkDir(QString workdir);
     void changeRemoteWorkDir(QListWidgetItem*);
-
+    void showLocalFileInfo(QString localPath="");
+    void changeLocalWorkDir(QListWidgetItem*);
 private:
     Ui::FileExplorer *ui;
     ClientCore* client;
