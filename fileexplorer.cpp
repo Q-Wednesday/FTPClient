@@ -4,14 +4,19 @@
 #include<QDir>
 FileExplorer::FileExplorer(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::FileExplorer)
+    ui(new Ui::FileExplorer),
+    localFileContainer(new LocalFileContainer(this)),
+    remoteFileContainer(new RemoteFileContainer(this))
 {
     ui->setupUi(this);
-    remoteFileInfo=ui->remoteFileInfo;
+    ui->fileListLayout->addWidget(remoteFileContainer);
+    ui->fileListLayout->addWidget(localFileContainer);
     connect(ui->remoteDir,&QListWidget::itemClicked,this,&FileExplorer::changeRemoteWorkDir);
     showLocalFileInfo();
     connect(ui->localDir,&QListWidget::itemClicked,this,&FileExplorer::changeLocalWorkDir);
-
+    connect(remoteFileContainer,&QListWidget::itemDoubleClicked,this,&FileExplorer::openRemoteFile);
+    connect(localFileContainer,&QListWidget::itemDoubleClicked,this,&FileExplorer::openLocalFile);
+    connect(localFileContainer,&LocalFileContainer::dragIn,this,&FileExplorer::downloadFile);
 }
 
 FileExplorer::~FileExplorer()
@@ -37,27 +42,32 @@ void FileExplorer::bindClient(ClientCore* clientLogin){
     connect(client,&ClientCore::serverReponse,[this](QString response){
         ui->serverResponse->append(response);
     });
+    connect(client,&ClientCore::retrSuccess,this,&FileExplorer::downloadSuccess);
 }
 
 void FileExplorer::showRemoteFileInfo(QString infoReceived){
-    remoteFileInfo->clear();
+    remoteFileContainer->clear();
     auto infos=infoReceived.split('\n');
     //实现解析文件信息
+    //data 5用于标识文件类型 256存储文件真实的信息（全名等）
     for(auto info:infos){
+        info=info.trimmed();
         if(info.isEmpty())continue;
         if(info[0]=='-'){
             QListWidgetItem* temp=new QListWidgetItem(info.split(' ').last());
             temp->setIcon(QIcon(":/icons/file"));
-
-            remoteFileInfo->addItem(temp);
+            temp->setData(5,"file");
+            remoteFileContainer->addItem(temp);
         }else if(info[0]=='d'){
             QListWidgetItem* temp=new QListWidgetItem(info.split(' ').last());
             temp->setIcon(QIcon(":/icons/dir"));
-            remoteFileInfo->addItem(temp);
+            temp->setData(5,"dir");
+            remoteFileContainer->addItem(temp);
         }else if(info[0]=='l'){
             QListWidgetItem* temp=new QListWidgetItem(info.split(' ').last());
             temp->setIcon(QIcon(":/icons/link"));
-            remoteFileInfo->addItem(temp);
+            temp->setData(5,"link");
+            remoteFileContainer->addItem(temp);
         }else{
             //其他类型暂时不支持解析
             continue;
@@ -68,11 +78,12 @@ void FileExplorer::showRemoteWorkDir(QString workdir){
     ui->remoteDir->clear();
     auto dirs=workdir.split('/');
     QString prefix="";
-    dirs.pop_front();//分隔开的时候最前面一个不要.所有pwd是没有后缀/的
+    if(workdir=="/")dirs.pop_front();//分隔开的时候最前面一个不要.所有pwd是没有后缀/的
     for(auto dir:dirs){
-        QListWidgetItem* temp=new QListWidgetItem(QString("/%1").arg(dir));
+        QListWidgetItem* temp=new QListWidgetItem(QString("%1/").arg(dir));
         prefix+=dir+'/';
-        temp->setData(1,prefix);
+        qDebug()<<"remote prefix"<<prefix;
+        temp->setData(256,prefix);
         ui->remoteDir->addItem(temp);
     }
     client->commandLIST();
@@ -80,47 +91,79 @@ void FileExplorer::showRemoteWorkDir(QString workdir){
 }
 
 void FileExplorer::changeRemoteWorkDir(QListWidgetItem* item){
-    client->commandCWD(item->data(1).toString());
+    client->commandCWD(item->data(256).toString());
 
 }
 void FileExplorer::showLocalFileInfo(QString localPath){
 
     if(localPath.isEmpty())
         localPath=QDir::currentPath();
-qDebug()<<"localPath:"<<localPath;
+    localWorkDir=localPath;//改变工作目录
+    qDebug()<<"localPath:"<<localPath;
     auto dirs=localPath.split('/');
     QString prefix="";
-    if(localPath[0]=='/'){
+    if(localPath=='/'){
         //mac或linux下
         dirs.pop_front();
     }
     ui->localDir->clear();
     for(auto dir:dirs){
-        QListWidgetItem* temp=new QListWidgetItem(QString("/%1").arg(dir));
+
+        QListWidgetItem* temp=new QListWidgetItem(QString("%1/").arg(dir));
         qDebug()<<"dir:"<<dir;
         prefix+='/'+dir;
-        qDebug()<<"prefix:"<<prefix;
-        temp->setData(1,prefix);
+        qDebug()<<"prefix:"<<prefix<<" "<<prefix.mid(1);
+        //windows下和mac,linux下有区别
+        if(localPath[0]=='/')
+            temp->setData(256,prefix);
+        else
+           temp->setData(256,prefix.mid(1));
         ui->localDir->addItem(temp);
     }
 
     QDir localDir=QDir(localPath);
-    ui->localFileInfo->clear();
+    localFileContainer->clear();
     for(auto fileInfo:localDir.entryInfoList()){
         if(fileInfo.fileName()=="." || fileInfo.fileName()=="..")continue;
         QListWidgetItem* temp=new QListWidgetItem(fileInfo.fileName());
         if(fileInfo.isDir()){
             temp->setIcon(QIcon(":/icons/dir"));
+            temp->setData(5,"dir");
         }else if(fileInfo.isFile()){
             temp->setIcon(QIcon(":/icons/file"));
+            temp->setData(5,"file");
         }else if(fileInfo.isSymLink()){
             temp->setIcon(QIcon(":/icons/link"));
+            temp->setData(5,"link");
         }
-        ui->localFileInfo->addItem(temp);
+        localFileContainer->addItem(temp);
     }
 
 }
 
 void FileExplorer::changeLocalWorkDir(QListWidgetItem* item){
-    showLocalFileInfo(item->data(1).toString());
+    showLocalFileInfo(item->data(256).toString());
+}
+
+void FileExplorer::openRemoteFile(QListWidgetItem* item){
+    qDebug()<<"double click";
+    //目前只处理打开文件夹,之后可能要支持打开软链接
+    if(item->data(5).toString()=="dir"){
+        client->commandCWD(item->data(0).toString());
+    }
+
+}
+void FileExplorer::openLocalFile(QListWidgetItem* item){
+    qDebug()<<"doubleclick";
+    if(item->data(5).toString()=="dir"){
+        showLocalFileInfo(localWorkDir+'/'+item->data(0).toString());
+    }
+}
+
+void FileExplorer:: downloadFile(QString sourcefile){
+    client->commandRETR(sourcefile,localWorkDir);
+}
+
+void FileExplorer::downloadSuccess(){
+    showLocalFileInfo(localWorkDir);
 }

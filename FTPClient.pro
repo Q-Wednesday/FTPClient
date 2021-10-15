@@ -10,16 +10,22 @@ CONFIG += c++11
 
 SOURCES += \
     clientcore.cpp \
+    filecontainer.cpp \
     fileexplorer.cpp \
+    localfilecontainer.cpp \
     logindialog.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    remotefilecontainer.cpp
 
 HEADERS += \
     clientcore.h \
+    filecontainer.h \
     fileexplorer.h \
+    localfilecontainer.h \
     logindialog.h \
-    mainwindow.h
+    mainwindow.h \
+    remotefilecontainer.h
 
 FORMS += \
     fileexplorer.ui \

@@ -5,6 +5,8 @@
 #include<QListWidget>
 #include<QListWidgetItem>
 #include"clientcore.h"
+#include"localfilecontainer.h"
+#include"remotefilecontainer.h"
 namespace Ui {
 class FileExplorer;
 }
@@ -26,10 +28,18 @@ private slots:
     void changeRemoteWorkDir(QListWidgetItem*);
     void showLocalFileInfo(QString localPath="");
     void changeLocalWorkDir(QListWidgetItem*);
+    void openRemoteFile(QListWidgetItem*);
+    void openLocalFile(QListWidgetItem*);
+    void downloadSuccess();//成功下载
+    void downloadFile(QString);//下载信号
+
 private:
     Ui::FileExplorer *ui;
     ClientCore* client;
-    QListWidget* remoteFileInfo;
+
+    QString localWorkDir;
+    LocalFileContainer* localFileContainer;
+    RemoteFileContainer* remoteFileContainer;
 };
 
 #endif // FILEEXPLORER_H

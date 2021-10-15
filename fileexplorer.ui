@@ -26,22 +26,6 @@
     <string>PushButton</string>
    </property>
   </widget>
-  <widget class="QListWidget" name="remoteFileInfo">
-   <property name="geometry">
-    <rect>
-     <x>50</x>
-     <y>150</y>
-     <width>251</width>
-     <height>411</height>
-    </rect>
-   </property>
-   <property name="dragEnabled">
-    <bool>true</bool>
-   </property>
-   <property name="dragDropMode">
-    <enum>QAbstractItemView::DragDrop</enum>
-   </property>
-  </widget>
   <widget class="QListWidget" name="remoteDir">
    <property name="geometry">
     <rect>
@@ -55,29 +39,13 @@
     <enum>QListView::LeftToRight</enum>
    </property>
   </widget>
-  <widget class="QListWidget" name="localFileInfo">
-   <property name="geometry">
-    <rect>
-     <x>380</x>
-     <y>190</y>
-     <width>241</width>
-     <height>361</height>
-    </rect>
-   </property>
-   <property name="dragEnabled">
-    <bool>true</bool>
-   </property>
-   <property name="dragDropMode">
-    <enum>QAbstractItemView::DragDrop</enum>
-   </property>
-  </widget>
   <widget class="QListWidget" name="localDir">
    <property name="geometry">
     <rect>
      <x>390</x>
-     <y>120</y>
-     <width>241</width>
-     <height>61</height>
+     <y>100</y>
+     <width>231</width>
+     <height>51</height>
     </rect>
    </property>
    <property name="flow">
@@ -93,6 +61,17 @@
      <height>81</height>
     </rect>
    </property>
+  </widget>
+  <widget class="QWidget" name="horizontalLayoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>80</x>
+     <y>200</y>
+     <width>551</width>
+     <height>331</height>
+    </rect>
+   </property>
+   <layout class="QHBoxLayout" name="fileListLayout"/>
   </widget>
  </widget>
  <resources/>

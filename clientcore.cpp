@@ -1,5 +1,5 @@
 #include "clientcore.h"
-
+#include<QFile>
 ClientCore::ClientCore(QString hostname,int port,QObject *parent) : QObject(parent),
     serverPort(port),connectionSocket(new QTcpSocket(this)),hostName(hostname),connectionState(NOTCONNECTED),
     fileSocket(nullptr)
@@ -32,13 +32,19 @@ void ClientCore::receiveMessage(){
 }
 void ClientCore::receiveFile(){
     if(fileSocket->bytesAvailable()<=0)
-        return;
-    //注意收发两端文本要使用对应的编解码
-    QString recv_text=QString::fromLocal8Bit(fileSocket->readAll());
-    qDebug()<<"received file"<<recv_text;
+        return;   
     if(requestState==REQLIST){
+        QString recv_text=QString::fromLocal8Bit(fileSocket->readAll());
+        qDebug()<<"received text:"<<recv_text;
         requestState=NOTHING;
         emit fileInfoGeted(recv_text);
+    }
+    else if(requestState==REQRETR){
+        QFile file(targetDir+"/"+sourceFile);
+        file.open(QIODevice::WriteOnly);
+        file.write(fileSocket->readAll());
+        file.close();
+        emit retrSuccess();
     }
     fileSocket->close();
     delete fileSocket;
@@ -89,6 +95,7 @@ void ClientCore::handleResponse(QString &response){
         commandTYPE();
     }else if(response.startsWith("150")){
         switch (requestState) {
+        case REQRETR:
         case REQLIST:
             //connectionState=LOGIN;
             qDebug()<<"start transfer";
@@ -109,19 +116,29 @@ void ClientCore::handleResponse(QString &response){
             qDebug()<<address<<port;
             fileSocket->connectToHost(QHostAddress(address),port);
             connect(fileSocket,&QTcpSocket::readyRead,this,&ClientCore::receiveFile);
-            int c=connectionSocket->waitForConnected();
+            int c=fileSocket->waitForConnected();
+            qDebug()<<"filesocket connected:"<<c;
             if(c){
                 connectionState=PASVMODE;
                 //TODO:这一段是重复代码，需要重新修改
-                switch (requestState) {
-                case REQLIST:
                 QString message;
-                if(filePath.length())
-                    message=QString("LIST %1\r\n").arg(filePath);
-                else message=QString("LIST\r\n");
-                int n=connectionSocket->write(message.toLocal8Bit());
-                qDebug()<<"send"<<message;
-                break;
+                switch (requestState)  {
+                case REQLIST:                   
+                {
+                    if(filePath.length())
+                        message=QString("LIST %1\r\n").arg(filePath);
+                    else message=QString("LIST\r\n");
+                    int n=connectionSocket->write(message.toLocal8Bit());
+                    qDebug()<<"send"<<message;
+                    break;
+                }
+                case REQRETR:{
+                    message=QString("RETR %1\r\n").arg(sourceFile);
+                    connectionSocket->write(message.toLocal8Bit());
+                    qDebug()<<"send"<<message;
+                    break;
+                }
+
                 }
             }
 
@@ -213,9 +230,10 @@ void ClientCore::commandPASV(){
 void ClientCore::commandLIST(QString path){
     //要已经进入模式才可以
     //commandPORT();
-    commandPASV();
     requestState=REQLIST;
     filePath=path;
+    commandPASV();
+
 }
 
 void ClientCore::commandPWD(){
@@ -225,9 +243,16 @@ void ClientCore::commandPWD(){
 }
 
 void ClientCore::commandCWD(QString dir){
-    //workDir=dir;
+
     QString message=QString("CWD %1\r\n").arg(dir);
     int n=connectionSocket->write(message.toLocal8Bit());
     requestState=REQCWD;
     qDebug()<<"send"<<message;
+}
+
+void ClientCore::commandRETR(QString source,QString target){
+    sourceFile=source;
+    targetDir=target;
+    requestState=REQRETR;
+    commandPASV();
 }
