@@ -54,6 +54,7 @@ void ClientCore::receiveFile(){
 }
 
 void ClientCore::handleResponse(QString &response){
+    qDebug()<<"response:"<<response;
     emit serverReponse(response);
     if(response.startsWith("220")){
         connectionState=CONNECTED;
@@ -96,12 +97,28 @@ void ClientCore::handleResponse(QString &response){
     }else if(response.startsWith("150")){
         switch (requestState) {
         case REQRETR:
+
         case REQLIST:
             //connectionState=LOGIN;
             qDebug()<<"start transfer";
+            break;
+        case REQSTOR:{
+            QFile file(sourceDir+'/'+sourceFile);
+            qDebug()<<"file info:"<<file.fileName();
+            file.open(QIODevice::ReadOnly);
+            fileSocket->write(file.readAll());
+            fileSocket->close();
+            qDebug()<<"stor file";
+            break;
+        }
+
         }
     }else if(response.startsWith("226")){
         qDebug()<<"transfer complete";
+        if(requestState==REQSTOR){
+            emit storSuccess();
+            requestState=NOTHING;
+        }
     }else if(response.startsWith("227")){
         //PASV连接消息，解析其中的6个数字
         if(connectionState==REQPASV){
@@ -138,7 +155,12 @@ void ClientCore::handleResponse(QString &response){
                     qDebug()<<"send"<<message;
                     break;
                 }
-
+                case REQSTOR:{
+                    message=QString("STOR %1\r\n").arg(sourceFile);
+                    connectionSocket->write(message.toLocal8Bit());
+                    qDebug()<<"send"<<message;
+                    break;
+                }
                 }
             }
 
@@ -159,7 +181,8 @@ void ClientCore::handleResponse(QString &response){
         }
     }
     else{
-        emit initSuccess(false);
+
+       // emit initSuccess(false);
     }
 }
 void ClientCore::connectionSuccess(){
@@ -254,5 +277,12 @@ void ClientCore::commandRETR(QString source,QString target){
     sourceFile=source;
     targetDir=target;
     requestState=REQRETR;
+    commandPASV();
+}
+void ClientCore::commandSTOR(QString source,QString sourceDir){
+    //source应该包含路径名
+    sourceFile=source;
+    this->sourceDir=sourceDir;
+    requestState=REQSTOR;
     commandPASV();
 }

@@ -9,7 +9,7 @@
 #define MAX_MESSAGE_LEN 1024
 #define MAX_DATA_SIZE 8192
 enum ConnectionState{NOTCONNECTED,CONNECTED,NOTLOGIN,LOGIN,PORTMODE,PASVMODE,REQTYPE,REQPORT,REQPASV};
-enum RequestState{NOTHING,REQLIST,REQCWD,REQRETR};
+enum RequestState{NOTHING,REQLIST,REQCWD,REQRETR,REQSTOR};
 class ClientCore : public QObject
 {
     Q_OBJECT
@@ -29,6 +29,7 @@ public:
     void commandLIST(QString path="");
     void userLogin(QString username,QString password="");//可以没有密码
     void commandRETR(QString source,QString target);
+    void commandSTOR(QString source,QString sourceDir);
 signals:
     void initSuccess(bool);//所有初始连接步骤完成后才会发送，false为某一步失败
     void fileInfoGeted(QString);
@@ -36,6 +37,7 @@ signals:
     void cwdSuccess(bool);
     void serverReponse(QString);
     void retrSuccess();
+    void storSuccess();
 private:
     void handleResponse(QString& response);
 private slots:
@@ -57,6 +59,7 @@ private:
     RequestState requestState;
     QString sourceFile;//标识文件传输的 源文件
     QString targetDir;//标识文件传输的目标文件夹
+    QString sourceDir;//标识文件传输的源文件夹
 };
 
 #endif // CLIENTCORE_H

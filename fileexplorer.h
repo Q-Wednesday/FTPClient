@@ -32,7 +32,7 @@ private slots:
     void openLocalFile(QListWidgetItem*);
     void downloadSuccess();//成功下载
     void downloadFile(QString);//下载信号
-
+    void uploadFile(QString);//上传文件
 private:
     Ui::FileExplorer *ui;
     ClientCore* client;

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>673</width>
-    <height>626</height>
+    <width>900</width>
+    <height>600</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,8 +16,8 @@
   <widget class="QPushButton" name="pushButton">
    <property name="geometry">
     <rect>
-     <x>290</x>
-     <y>570</y>
+     <x>120</x>
+     <y>490</y>
      <width>111</width>
      <height>41</height>
     </rect>
@@ -29,10 +29,10 @@
   <widget class="QListWidget" name="remoteDir">
    <property name="geometry">
     <rect>
-     <x>70</x>
-     <y>100</y>
-     <width>221</width>
-     <height>31</height>
+     <x>330</x>
+     <y>20</y>
+     <width>271</width>
+     <height>41</height>
     </rect>
    </property>
    <property name="flow">
@@ -42,10 +42,10 @@
   <widget class="QListWidget" name="localDir">
    <property name="geometry">
     <rect>
-     <x>390</x>
-     <y>100</y>
-     <width>231</width>
-     <height>51</height>
+     <x>610</x>
+     <y>20</y>
+     <width>271</width>
+     <height>41</height>
     </rect>
    </property>
    <property name="flow">
@@ -55,20 +55,20 @@
   <widget class="QTextBrowser" name="serverResponse">
    <property name="geometry">
     <rect>
-     <x>110</x>
+     <x>10</x>
      <y>10</y>
-     <width>411</width>
-     <height>81</height>
+     <width>311</width>
+     <height>471</height>
     </rect>
    </property>
   </widget>
   <widget class="QWidget" name="horizontalLayoutWidget">
    <property name="geometry">
     <rect>
-     <x>80</x>
-     <y>200</y>
+     <x>330</x>
+     <y>80</y>
      <width>551</width>
-     <height>331</height>
+     <height>471</height>
     </rect>
    </property>
    <layout class="QHBoxLayout" name="fileListLayout"/>

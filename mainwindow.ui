@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>854</width>
-    <height>962</height>
+    <width>960</width>
+    <height>720</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <widget class="QPushButton" name="loginButton">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>20</x>
       <y>10</y>
       <width>84</width>
       <height>24</height>
@@ -30,10 +30,10 @@
    <widget class="QTabWidget" name="sessionTab">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>50</y>
-      <width>821</width>
-      <height>871</height>
+      <x>30</x>
+      <y>70</y>
+      <width>900</width>
+      <height>600</height>
      </rect>
     </property>
     <property name="currentIndex">
@@ -46,7 +46,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>854</width>
+     <width>960</width>
      <height>25</height>
     </rect>
    </property>

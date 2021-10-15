@@ -17,6 +17,7 @@ FileExplorer::FileExplorer(QWidget *parent) :
     connect(remoteFileContainer,&QListWidget::itemDoubleClicked,this,&FileExplorer::openRemoteFile);
     connect(localFileContainer,&QListWidget::itemDoubleClicked,this,&FileExplorer::openLocalFile);
     connect(localFileContainer,&LocalFileContainer::dragIn,this,&FileExplorer::downloadFile);
+    connect(remoteFileContainer,&RemoteFileContainer::dragIn,this,&FileExplorer::uploadFile);
 }
 
 FileExplorer::~FileExplorer()
@@ -43,6 +44,9 @@ void FileExplorer::bindClient(ClientCore* clientLogin){
         ui->serverResponse->append(response);
     });
     connect(client,&ClientCore::retrSuccess,this,&FileExplorer::downloadSuccess);
+    connect(client,&ClientCore::storSuccess,[this]{
+        client->commandPWD();
+    });
 }
 
 void FileExplorer::showRemoteFileInfo(QString infoReceived){
@@ -166,4 +170,8 @@ void FileExplorer:: downloadFile(QString sourcefile){
 
 void FileExplorer::downloadSuccess(){
     showLocalFileInfo(localWorkDir);
+}
+
+void  FileExplorer::uploadFile(QString sourcefile){
+    client->commandSTOR(sourcefile,localWorkDir);
 }
