@@ -18,11 +18,10 @@ class FileExplorer : public QWidget
 public:
     explicit FileExplorer(QWidget *parent = nullptr);
     ~FileExplorer();
-
+    void closeSession();
 public slots:
     void bindClient(ClientCore* clientLogin);
 private slots:
-    void on_pushButton_clicked();
     void showRemoteFileInfo(QString infoReceived);
     void showRemoteWorkDir(QString workdir);
     void changeRemoteWorkDir(QListWidgetItem*);
@@ -33,6 +32,11 @@ private slots:
     void downloadSuccess();//成功下载
     void downloadFile(QString);//下载信号
     void uploadFile(QString);//上传文件
+    void renameFile(QString);//重命名
+    void removeDir(QString);//删除文件夹
+    void makeDir();//创建文件夹
+signals:
+    void sessionClosed();
 private:
     Ui::FileExplorer *ui;
     ClientCore* client;
@@ -40,6 +44,7 @@ private:
     QString localWorkDir;
     LocalFileContainer* localFileContainer;
     RemoteFileContainer* remoteFileContainer;
+    bool doubleCliked;//判断点击事件 是不是double
 };
 
 #endif // FILEEXPLORER_H

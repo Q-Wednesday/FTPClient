@@ -2,22 +2,46 @@
 #include "ui_fileexplorer.h"
 #include<QIcon>
 #include<QDir>
+#include<QInputDialog>
+#include<QTimer>
 FileExplorer::FileExplorer(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::FileExplorer),
     localFileContainer(new LocalFileContainer(this)),
-    remoteFileContainer(new RemoteFileContainer(this))
+    remoteFileContainer(new RemoteFileContainer(this)),
+    doubleCliked(false)
 {
     ui->setupUi(this);
     ui->fileListLayout->addWidget(remoteFileContainer);
     ui->fileListLayout->addWidget(localFileContainer);
     connect(ui->remoteDir,&QListWidget::itemClicked,this,&FileExplorer::changeRemoteWorkDir);
     showLocalFileInfo();
-    connect(ui->localDir,&QListWidget::itemClicked,this,&FileExplorer::changeLocalWorkDir);
+   // connect(ui->localDir,&QListWidget::itemClicked,this,&FileExplorer::changeLocalWorkDir);
+    connect(ui->localDir,&QListWidget::itemClicked,[this](QListWidgetItem* item){
+        qDebug()<<"doubleclicked:"<<doubleCliked;
+        if(!doubleCliked){
+            QTimer::singleShot(100,this,[this,item]{changeLocalWorkDir(item);});
+
+        }
+    });
     connect(remoteFileContainer,&QListWidget::itemDoubleClicked,this,&FileExplorer::openRemoteFile);
     connect(localFileContainer,&QListWidget::itemDoubleClicked,this,&FileExplorer::openLocalFile);
     connect(localFileContainer,&LocalFileContainer::dragIn,this,&FileExplorer::downloadFile);
     connect(remoteFileContainer,&RemoteFileContainer::dragIn,this,&FileExplorer::uploadFile);
+    connect(remoteFileContainer,&FileContainer::renameFile,this,&FileExplorer::renameFile);
+    connect(remoteFileContainer,&FileContainer::removeDir,this,&FileExplorer::removeDir);
+    connect(remoteFileContainer,&FileContainer::makeDir,this,&FileExplorer::makeDir);
+
+    //双击可以输入路径
+    connect(ui->localDir,&QListWidget::itemDoubleClicked,this,[this](QListWidgetItem* item){
+        qDebug()<<"double click";
+        doubleCliked=true;
+        bool ok;
+        QString target=QInputDialog::getText(this,tr("Change Directory"),tr("Enter Path"),QLineEdit::Normal,item->data(256).toString(),&ok);
+        if(ok && !target.isEmpty()){
+            showLocalFileInfo(target);
+        }
+    });
 }
 
 FileExplorer::~FileExplorer()
@@ -25,15 +49,6 @@ FileExplorer::~FileExplorer()
     delete ui;
 }
 
-void FileExplorer::on_pushButton_clicked()
-{
-    //client=new ClientCore("localhost",21,this);
-    qDebug()<<client->getState();
-    //client->commandLIST();
-    client->commandPWD();
-
-
-}
 
 void FileExplorer::bindClient(ClientCore* clientLogin){
     if(client==nullptr)return;
@@ -47,6 +62,19 @@ void FileExplorer::bindClient(ClientCore* clientLogin){
     connect(client,&ClientCore::storSuccess,[this]{
         client->commandPWD();
     });
+    connect(client,&ClientCore::rntoSuccess,[this]{
+        client->commandPWD();
+    });
+    connect(client,&ClientCore::rmdSuccess,[this]{
+        client->commandPWD();
+    });
+    connect(client,&ClientCore::mkdSuccess,[this]{
+        client->commandPWD();
+    });
+    connect(client,&ClientCore::quitSuccess,[this]{
+        emit sessionClosed();
+    });
+    client->commandPWD();
 }
 
 void FileExplorer::showRemoteFileInfo(QString infoReceived){
@@ -95,6 +123,7 @@ void FileExplorer::showRemoteWorkDir(QString workdir){
 }
 
 void FileExplorer::changeRemoteWorkDir(QListWidgetItem* item){
+
     client->commandCWD(item->data(256).toString());
 
 }
@@ -102,7 +131,28 @@ void FileExplorer::showLocalFileInfo(QString localPath){
 
     if(localPath.isEmpty())
         localPath=QDir::currentPath();
+    //先检测是否在
+    QDir localDir=QDir(localPath);
+    if(!localDir.exists())return;
     localWorkDir=localPath;//改变工作目录
+    localFileContainer->clear();
+    for(auto fileInfo:localDir.entryInfoList()){
+        if(fileInfo.fileName()=="." || fileInfo.fileName()=="..")continue;
+        QListWidgetItem* temp=new QListWidgetItem(fileInfo.fileName());
+        if(fileInfo.isDir()){
+            temp->setIcon(QIcon(":/icons/dir"));
+            temp->setData(5,"dir");
+        }else if(fileInfo.isFile()){
+            temp->setIcon(QIcon(":/icons/file"));
+            temp->setData(5,"file");
+        }else if(fileInfo.isSymLink()){
+            temp->setIcon(QIcon(":/icons/link"));
+            temp->setData(5,"link");
+        }
+        localFileContainer->addItem(temp);
+    }
+
+
     qDebug()<<"localPath:"<<localPath;
     auto dirs=localPath.split('/');
     QString prefix="";
@@ -125,28 +175,14 @@ void FileExplorer::showLocalFileInfo(QString localPath){
         ui->localDir->addItem(temp);
     }
 
-    QDir localDir=QDir(localPath);
-    localFileContainer->clear();
-    for(auto fileInfo:localDir.entryInfoList()){
-        if(fileInfo.fileName()=="." || fileInfo.fileName()=="..")continue;
-        QListWidgetItem* temp=new QListWidgetItem(fileInfo.fileName());
-        if(fileInfo.isDir()){
-            temp->setIcon(QIcon(":/icons/dir"));
-            temp->setData(5,"dir");
-        }else if(fileInfo.isFile()){
-            temp->setIcon(QIcon(":/icons/file"));
-            temp->setData(5,"file");
-        }else if(fileInfo.isSymLink()){
-            temp->setIcon(QIcon(":/icons/link"));
-            temp->setData(5,"link");
-        }
-        localFileContainer->addItem(temp);
-    }
 
 }
 
 void FileExplorer::changeLocalWorkDir(QListWidgetItem* item){
-    showLocalFileInfo(item->data(256).toString());
+    qDebug()<<"call change local"<<doubleCliked;
+    if(!doubleCliked)
+        showLocalFileInfo(item->data(256).toString());
+    else doubleCliked=false;
 }
 
 void FileExplorer::openRemoteFile(QListWidgetItem* item){
@@ -174,4 +210,28 @@ void FileExplorer::downloadSuccess(){
 
 void  FileExplorer::uploadFile(QString sourcefile){
     client->commandSTOR(sourcefile,localWorkDir);
+}
+
+void FileExplorer::renameFile(QString source){
+    bool ok;
+    QString target=QInputDialog::getText(this,tr("Rename File"),tr("Enter New File Name"),QLineEdit::Normal,source,&ok);
+    if(ok && !target.isEmpty()){
+        client->commandRNFR(source,target);
+    }
+
+}
+void FileExplorer::removeDir(QString dir){
+    client->commandRMD(dir);
+}
+
+void FileExplorer::makeDir(){
+    bool ok;
+    QString target=QInputDialog::getText(this,tr("New Directory"),tr("Enter Name"),QLineEdit::Normal,0,&ok);
+    if(ok && !target.isEmpty()){
+        client->commandMKD(target);
+    }
+}
+
+void FileExplorer::closeSession(){
+    client->commandQUIT();
 }

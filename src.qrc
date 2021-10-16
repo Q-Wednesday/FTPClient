@@ -3,5 +3,6 @@
         <file alias="dir">src/icons/dir.png</file>
         <file alias="file">src/icons/file.png</file>
         <file alias="link">src/icons/link.png</file>
+        <file alias="ftp">src/icons/FTP.png</file>
     </qresource>
 </RCC>

@@ -1,5 +1,6 @@
 #include "clientcore.h"
 #include<QFile>
+#define MAX_DATA_SIZE 8196
 ClientCore::ClientCore(QString hostname,int port,QObject *parent) : QObject(parent),
     serverPort(port),connectionSocket(new QTcpSocket(this)),hostName(hostname),connectionState(NOTCONNECTED),
     fileSocket(nullptr)
@@ -42,7 +43,13 @@ void ClientCore::receiveFile(){
     else if(requestState==REQRETR){
         QFile file(targetDir+"/"+sourceFile);
         file.open(QIODevice::WriteOnly);
-        file.write(fileSocket->readAll());
+        char buf[MAX_DATA_SIZE];
+        while (true) {
+            int n=fileSocket->read(buf,MAX_DATA_SIZE);
+            int m=file.write(buf,MAX_DATA_SIZE);
+            qDebug()<<"receive "<<n<<"Bytes,write"<<m;
+            if(n<=0)break;
+        }
         file.close();
         emit retrSuccess();
     }
@@ -174,11 +181,37 @@ void ClientCore::handleResponse(QString &response){
         emit pwdGeted(regExp.cap(1));
     }
     else if(response.startsWith("250")){
-        if(requestState==REQCWD){
+        switch (requestState) {
+            case REQCWD:{
+                requestState=NOTHING;
+                emit cwdSuccess(true);
+                commandPWD();//进行一次拉去，会成功重新拉取文件
+                break;
+            }
+            case REQRNTO:{
+                requestState=NOTHING;
+                emit rntoSuccess();
+                break;
+            }
+            case REQRMD:{
+                requestState=NOTHING;
+                emit rmdSuccess();
+                break;
+            }
+        case REQMKD:{
             requestState=NOTHING;
-            emit cwdSuccess(true);
-            commandPWD();//进行一次拉去，会成功重新拉取文件
+            emit mkdSuccess();
+            break;
         }
+        }
+
+    }else if(response.startsWith("350")){
+        //重命名成功接收命令
+        commandRNTO();
+
+    }else if(response.startsWith("221")){
+        //good bye
+        emit quitSuccess();
     }
     else{
 
@@ -285,4 +318,43 @@ void ClientCore::commandSTOR(QString source,QString sourceDir){
     this->sourceDir=sourceDir;
     requestState=REQSTOR;
     commandPASV();
+}
+void ClientCore::commandRNFR(QString source, QString target){
+    sourceFile=source;
+    targetName=target;
+    requestState=REQRNFN;
+    QString message=QString("RNFR %1\r\n").arg(sourceFile);
+    int n=connectionSocket->write(message.toLocal8Bit());
+    qDebug()<<"send"<<message;
+}
+
+void ClientCore::commandRNTO(){
+    requestState=REQRNTO;
+    QString message=QString("RNTO %1\r\n").arg(targetName);
+    int n=connectionSocket->write(message.toLocal8Bit());
+    qDebug()<<"send"<<message;
+
+}
+void ClientCore::commandRMD(QString dir){
+    requestState=REQRMD;
+    QString message=QString("RMD %1\r\n").arg(dir);
+    int n=connectionSocket->write(message.toLocal8Bit());
+    qDebug()<<"send"<<message;
+}
+
+void ClientCore::commandMKD(QString dir){
+    requestState=REQMKD;
+    QString message=QString("MKD %1\r\n").arg(dir);
+    int n=connectionSocket->write(message.toLocal8Bit());
+    qDebug()<<"send"<<message;
+}
+
+void ClientCore::commandQUIT(){
+    QString message=QString("QUIT\r\n");
+    int n=connectionSocket->write(message.toLocal8Bit());
+    qDebug()<<"send"<<message;
+}
+
+QString ClientCore::getHostName(){
+    return hostName;
 }

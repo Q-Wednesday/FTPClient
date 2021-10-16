@@ -8,7 +8,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     sessionTab=ui->sessionTab;
-
+    connect(sessionTab,&QTabWidget::tabCloseRequested,this,&MainWindow::closeSession);
     //sessionTab->addTab(new FileExplorer(this),"session1");
     //sessionTab->addTab(new FileExplorer(this),"session2");
 }
@@ -30,5 +30,14 @@ void MainWindow::on_loginButton_clicked()
 void MainWindow::newSession(ClientCore* client){
     FileExplorer* explorer=new FileExplorer(this);
     explorer->bindClient(client);
-    sessionTab->addTab(explorer,"session1");
+    sessionTab->addTab(explorer,client->getHostName());
+}
+
+void MainWindow::closeSession(int index){
+
+    FileExplorer* fileExplorer=qobject_cast<FileExplorer*>(sessionTab->widget(index));
+    connect(fileExplorer,&FileExplorer::sessionClosed,[this,index]{
+        sessionTab->removeTab(index);
+    });
+    fileExplorer->closeSession();
 }
