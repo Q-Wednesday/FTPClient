@@ -15,7 +15,7 @@ FileExplorer::FileExplorer(QWidget *parent) :
     ui->fileListLayout->addWidget(remoteFileContainer);
     ui->fileListLayout->addWidget(localFileContainer);
     connect(ui->remoteDir,&QListWidget::itemClicked,this,&FileExplorer::changeRemoteWorkDir);
-    showLocalFileInfo();
+    showLocalFileInfo("D:");
    // connect(ui->localDir,&QListWidget::itemClicked,this,&FileExplorer::changeLocalWorkDir);
     connect(ui->localDir,&QListWidget::itemClicked,[this](QListWidgetItem* item){
         qDebug()<<"doubleclicked:"<<doubleCliked;
@@ -138,6 +138,7 @@ void FileExplorer::showLocalFileInfo(QString localPath){
     localFileContainer->clear();
     for(auto fileInfo:localDir.entryInfoList()){
         if(fileInfo.fileName()=="." || fileInfo.fileName()=="..")continue;
+        qDebug()<<fileInfo.absoluteFilePath();
         QListWidgetItem* temp=new QListWidgetItem(fileInfo.fileName());
         if(fileInfo.isDir()){
             temp->setIcon(QIcon(":/icons/dir"));
@@ -151,7 +152,10 @@ void FileExplorer::showLocalFileInfo(QString localPath){
         }
         localFileContainer->addItem(temp);
     }
-
+    //临时测试加的
+    for(auto filename:localDir.entryList()){
+        qDebug()<<filename;
+    }
 
     qDebug()<<"localPath:"<<localPath;
     auto dirs=localPath.split('/');

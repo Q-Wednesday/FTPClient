@@ -3,11 +3,13 @@
 #define MAX_DATA_SIZE 8196
 ClientCore::ClientCore(QString hostname,int port,QObject *parent) : QObject(parent),
     serverPort(port),connectionSocket(new QTcpSocket(this)),hostName(hostname),connectionState(NOTCONNECTED),
-    fileSocket(nullptr)
+    fileSocket(new QTcpSocket(this))
 {
     //构造函数只创建，不连接，不报错
     connect(connectionSocket,&QTcpSocket::connected,this,&ClientCore::connectionSuccess);
     connect(connectionSocket,&QTcpSocket::readyRead,this,&ClientCore::receiveMessage);
+    connect(fileSocket,&QTcpSocket::readyRead,this,&ClientCore::receiveFile);
+
 }
 
 bool ClientCore::connectServer(){
@@ -38,25 +40,25 @@ void ClientCore::receiveFile(){
         QString recv_text=QString::fromLocal8Bit(fileSocket->readAll());
         qDebug()<<"received text:"<<recv_text;
         requestState=NOTHING;
+        fileSocket->close();
+        //delete fileSocket;
         emit fileInfoGeted(recv_text);
     }
     else if(requestState==REQRETR){
-        QFile file(targetDir+"/"+sourceFile);
-        file.open(QIODevice::WriteOnly);
-        char buf[MAX_DATA_SIZE];
+
+        //char buf[MAX_DATA_SIZE];
+        qDebug()<<"receive file signal";
         while (true) {
-            int n=fileSocket->read(buf,MAX_DATA_SIZE);
-            int m=file.write(buf,MAX_DATA_SIZE);
-            qDebug()<<"receive "<<n<<"Bytes,write"<<m;
-            if(n<=0)break;
+            QByteArray data=fileSocket->read(MAX_DATA_SIZE);
+            //fileSocket->read(buf,MAX_DATA_SIZE);
+            int m=filePointer->write(data);
+            qDebug()<<"write"<<m;
+            if(data.size()==0)break;           
         }
-        file.close();
-        emit retrSuccess();
+        //file.close();
+        //emit retrSuccess();
     }
-    fileSocket->close();
-    delete fileSocket;
-    //TODO:接收完成后关闭数据连接
-    //handleResponse(recv_text);
+
     return ;
 }
 
@@ -104,16 +106,23 @@ void ClientCore::handleResponse(QString &response){
     }else if(response.startsWith("150")){
         switch (requestState) {
         case REQRETR:
-
+            break;
         case REQLIST:
             //connectionState=LOGIN;
             qDebug()<<"start transfer";
             break;
         case REQSTOR:{
             QFile file(sourceDir+'/'+sourceFile);
-            qDebug()<<"file info:"<<file.fileName();
+            qDebug()<<"file info:"<<file.fileName()<<file.exists()<<file.size();
             file.open(QIODevice::ReadOnly);
-            fileSocket->write(file.readAll());
+            //fileSocket->write(file.readAll());//可能一次不能读太多
+            char buf[MAX_DATA_SIZE];
+            while(true){
+                int n=file.read(buf,MAX_DATA_SIZE);
+                if(n==0)break;
+                int m=fileSocket->write(buf,n);
+                qDebug()<<"stor m:"<<m<<" n:"<<n;
+            }
             fileSocket->close();
             qDebug()<<"stor file";
             break;
@@ -136,10 +145,10 @@ void ClientCore::handleResponse(QString &response){
             auto list=address.split(',');
             int port=list[4].toInt()*256+list[5].toInt();
             address=list.mid(0,4).join('.');
-            fileSocket=new QTcpSocket(this);
+            //fileSocket=new QTcpSocket(this);
             qDebug()<<address<<port;
             fileSocket->connectToHost(QHostAddress(address),port);
-            connect(fileSocket,&QTcpSocket::readyRead,this,&ClientCore::receiveFile);
+            //connect(fileSocket,&QTcpSocket::readyRead,this,&ClientCore::receiveFile);
             int c=fileSocket->waitForConnected();
             qDebug()<<"filesocket connected:"<<c;
             if(c){
@@ -158,6 +167,13 @@ void ClientCore::handleResponse(QString &response){
                 }
                 case REQRETR:{
                     message=QString("RETR %1\r\n").arg(sourceFile);
+                    filePointer=new QFile(targetDir+"/"+sourceFile);
+                    filePointer->open(QIODevice::WriteOnly);
+                    connect(fileSocket,&QTcpSocket::disconnected,[this]{
+                        filePointer->close();
+                        delete filePointer;
+                        emit retrSuccess();
+                    });//其实也可能是意外关闭了远程连接
                     connectionSocket->write(message.toLocal8Bit());
                     qDebug()<<"send"<<message;
                     break;
@@ -268,7 +284,7 @@ void ClientCore::commandPORT(){
     tcpServer->listen(QHostAddress::Any,1025);
     connect(tcpServer,&QTcpServer::newConnection,[this]{
         fileSocket=tcpServer->nextPendingConnection();
-        connect(fileSocket,&QTcpSocket::readyRead,this,&ClientCore::receiveFile);
+        //connect(fileSocket,&QTcpSocket::readyRead,this,&ClientCore::receiveFile);
     });
     QString localHostname=QHostInfo::localHostName();
     QHostInfo hostInfo=QHostInfo::fromName(localHostname);

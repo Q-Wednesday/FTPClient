@@ -6,6 +6,7 @@
 #include<QHostAddress>
 #include<QHostInfo>
 #include<QTcpServer>
+#include<QFile>
 #define MAX_MESSAGE_LEN 1024
 #define MAX_DATA_SIZE 8192
 enum ConnectionState{NOTCONNECTED,CONNECTED,NOTLOGIN,LOGIN,PORTMODE,PASVMODE,REQTYPE,REQPORT,REQPASV};
@@ -71,6 +72,7 @@ private:
     QString targetDir;//标识文件传输的目标文件夹
     QString sourceDir;//标识文件传输的源文件夹
     QString targetName;//标识重命名的目标名称
+    QFile* filePointer;
 };
 
 #endif // CLIENTCORE_H
