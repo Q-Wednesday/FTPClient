@@ -19,7 +19,7 @@ FileExplorer::FileExplorer(QWidget *parent) :
     showLocalFileInfo();
     //连接信号槽实现拖拽和点击的功能
     connect(ui->remoteDir,&QListWidget::itemClicked,this,&FileExplorer::changeRemoteWorkDir);   
-    connect(ui->localDir,&QListWidget::itemClicked,[this](QListWidgetItem* item){
+    connect(ui->localDir,&QListWidget::itemClicked,this,[this](QListWidgetItem* item){
         qDebug()<<"doubleclicked:"<<doubleCliked;
         if(!doubleCliked){
             QTimer::singleShot(100,this,[this,item]{changeLocalWorkDir(item);});
@@ -66,7 +66,7 @@ void FileExplorer::bindClient(ClientCore* clientLogin){
     //连接信号槽接收客户端处理各种命令的信号
     connect(client,&ClientCore::fileInfoGeted,this,&FileExplorer::showRemoteFileInfo);
     connect(client,&ClientCore::pwdGeted,this,&FileExplorer::showRemoteWorkDir);
-    connect(client,&ClientCore::serverReponse,[this](QString response){
+    connect(client,&ClientCore::serverReponse,this,[this](QString response){
         ui->serverResponse->append(response);
     });
     connect(client,&ClientCore::retrSuccess,this,&FileExplorer::downloadSuccess);
@@ -152,7 +152,7 @@ void FileExplorer::showRemoteWorkDir(QString workdir){
     for(auto dir:dirs){
         QListWidgetItem* temp=new QListWidgetItem(QString("%1/").arg(dir));
         prefix+=dir+'/';
-        qDebug()<<"remote prefix"<<prefix;
+        //qDebug()<<"remote prefix"<<prefix;
         temp->setData(256,prefix);
         ui->remoteDir->addItem(temp);
     }
@@ -171,9 +171,11 @@ void FileExplorer::showLocalFileInfo(QString localPath){
     if(!localDir.exists())return;
     localWorkDir=localPath;//改变工作目录
     localFileContainer->clear();
+    qDebug()<<"local path:"<<localPath;
     for(auto fileInfo:localDir.entryInfoList()){
+        qDebug()<<fileInfo.fileName();
         if(fileInfo.fileName()=="." || fileInfo.fileName()=="..")continue;
-        qDebug()<<fileInfo.absoluteFilePath();
+        //qDebug()<<fileInfo.absoluteFilePath();
         QListWidgetItem* temp=new QListWidgetItem(fileInfo.fileName());
         if(fileInfo.isDir()){
             temp->setIcon(QIcon(":/icons/dir"));
@@ -190,7 +192,7 @@ void FileExplorer::showLocalFileInfo(QString localPath){
 
     auto dirs=localPath.split('/');
     QString prefix="";
-    if(localPath=='/'){
+    if(localPath=="/"){
         //mac或linux下
         dirs.pop_front();
     }
@@ -198,18 +200,10 @@ void FileExplorer::showLocalFileInfo(QString localPath){
     for(auto dir:dirs){
 
         QListWidgetItem* temp=new QListWidgetItem(QString("%1/").arg(dir));
-        qDebug()<<"dir:"<<dir;
         prefix+='/'+dir;
-        qDebug()<<"prefix:"<<prefix<<" "<<prefix.mid(1);
-        //windows下和mac,linux下有区别
-        if(localPath[0]=='/')
-            temp->setData(256,prefix);
-        else
-           temp->setData(256,prefix.mid(1));
+        temp->setData(256,prefix.mid(1));
         ui->localDir->addItem(temp);
     }
-
-
 }
 
 void FileExplorer::changeLocalWorkDir(QListWidgetItem* item){

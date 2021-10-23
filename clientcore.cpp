@@ -324,11 +324,14 @@ void ClientCore::commandPORT(){
     connect(tcpServer,&QTcpServer::newConnection,[this]{
         fileSocket=tcpServer->nextPendingConnection();
         connect(fileSocket,&QTcpSocket::readyRead,this,&ClientCore::receiveFile);//接收文件传输
-        connect(fileSocket,&QTcpSocket::disconnected,[this]{
-            filePointer->close();
-            delete filePointer;
-            emit retrSuccess();
-        });
+        if(requestState==REQRETR){
+            connect(fileSocket,&QTcpSocket::disconnected,[this]{
+                filePointer->close();
+                delete filePointer;
+                emit retrSuccess();
+            });
+        }
+
         connectionState=PORTMODE;
     });
     QString address=clientAddress.toString().replace(".",",");
