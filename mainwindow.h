@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include"clientcore.h"
+#include"logindialog.h"
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -23,5 +24,6 @@ private slots:
 private:
     Ui::MainWindow *ui;
     QTabWidget* sessionTab;
+    LoginDialog* dialog;
 };
 #endif // MAINWINDOW_H

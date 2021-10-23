@@ -35,6 +35,10 @@ private slots:
     void renameFile(QString);//重命名
     void removeDir(QString);//删除文件夹
     void makeDir();//创建文件夹
+    void on_reconnectButton_clicked();
+
+    void on_refreshButton_clicked();
+
 signals:
     void sessionClosed();
 private:

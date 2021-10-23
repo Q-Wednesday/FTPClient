@@ -6,18 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>900</width>
-    <height>669</height>
+    <width>1015</width>
+    <height>740</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0" rowspan="2">
+   <item row="0" column="0" rowspan="2" colspan="2">
     <widget class="QTextBrowser" name="serverResponse"/>
    </item>
-   <item row="0" column="1">
+   <item row="0" column="2">
     <widget class="QListWidget" name="remoteDir">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
@@ -42,7 +42,7 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="2">
+   <item row="0" column="3">
     <widget class="QListWidget" name="localDir">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
@@ -79,8 +79,51 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="1" colspan="2">
+   <item row="1" column="2" colspan="2">
     <layout class="QHBoxLayout" name="fileListLayout"/>
+   </item>
+   <item row="2" column="0" colspan="2">
+    <widget class="QCheckBox" name="isPassive">
+     <property name="text">
+      <string>Passive</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2" rowspan="2" colspan="2">
+    <widget class="QTextBrowser" name="hintBox">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>40</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>50</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QPushButton" name="refreshButton">
+     <property name="text">
+      <string>Refresh</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QPushButton" name="reconnectButton">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
+     <property name="text">
+      <string>Reconnect</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

@@ -4,6 +4,7 @@
 #include<QDir>
 #include<QInputDialog>
 #include<QTimer>
+#include<QCheckBox>
 FileExplorer::FileExplorer(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::FileExplorer),
@@ -15,7 +16,7 @@ FileExplorer::FileExplorer(QWidget *parent) :
     ui->fileListLayout->addWidget(remoteFileContainer);
     ui->fileListLayout->addWidget(localFileContainer);
     connect(ui->remoteDir,&QListWidget::itemClicked,this,&FileExplorer::changeRemoteWorkDir);
-    showLocalFileInfo("D:");
+    showLocalFileInfo();
    // connect(ui->localDir,&QListWidget::itemClicked,this,&FileExplorer::changeLocalWorkDir);
     connect(ui->localDir,&QListWidget::itemClicked,[this](QListWidgetItem* item){
         qDebug()<<"doubleclicked:"<<doubleCliked;
@@ -51,7 +52,14 @@ FileExplorer::~FileExplorer()
 
 
 void FileExplorer::bindClient(ClientCore* clientLogin){
-    if(client==nullptr)return;
+    if(clientLogin->getState()<LOGIN){
+        ui->reconnectButton->setEnabled(true);
+        ui->hintBox->setText("Error: Please reconnect to the server!");
+    }
+    else{
+        ui->reconnectButton->setEnabled(false);
+        ui->hintBox->setText("Welcome!");
+    }
     client=clientLogin;
     connect(client,&ClientCore::fileInfoGeted,this,&FileExplorer::showRemoteFileInfo);
     connect(client,&ClientCore::pwdGeted,this,&FileExplorer::showRemoteWorkDir);
@@ -72,9 +80,24 @@ void FileExplorer::bindClient(ClientCore* clientLogin){
         client->commandPWD();
     });
     connect(client,&ClientCore::quitSuccess,[this]{
+        disconnect(client,nullptr,this,nullptr);
         emit sessionClosed();
     });
-    client->commandPWD();
+    connect(client,&ClientCore::remoteClosed,this,[this]{
+        ui->reconnectButton->setEnabled(true);
+        ui->hintBox->setText("Error: Please reconnect to the server!");
+    });
+    connect(client,&ClientCore::initSuccess,[this](bool flag){
+            if(flag==false){
+                ui->reconnectButton->setEnabled(true);
+                ui->hintBox->setText("Error: Please reconnect to the server!");
+            }else{
+                ui->reconnectButton->setEnabled(false);
+                ui->hintBox->setText("Welcome!");
+            }
+    });
+    connect(ui->isPassive,&QCheckBox::stateChanged,client,&ClientCore::setPassive);
+
 }
 
 void FileExplorer::showRemoteFileInfo(QString infoReceived){
@@ -154,7 +177,7 @@ void FileExplorer::showLocalFileInfo(QString localPath){
     }
     //临时测试加的
     for(auto filename:localDir.entryList()){
-        qDebug()<<filename;
+        //qDebug()<<filename;
     }
 
     qDebug()<<"localPath:"<<localPath;
@@ -237,5 +260,26 @@ void FileExplorer::makeDir(){
 }
 
 void FileExplorer::closeSession(){
+    //让client core发送QUIT信号，如果1秒没有反应就退出
     client->commandQUIT();
+    QTimer::singleShot(1000,this,[this]{
+        emit sessionClosed();
+    });
 }
+
+void FileExplorer::on_reconnectButton_clicked()
+{
+    client->connectServer();
+    if(client->getState()<LOGIN){
+        ui->reconnectButton->setEnabled(true);
+        ui->hintBox->setText("Error: Please reconnect to the server!");
+    }
+}
+
+
+void FileExplorer::on_refreshButton_clicked()
+{
+    if(client->getState()<LOGIN)return;
+    client->commandPWD();
+}
+

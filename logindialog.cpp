@@ -12,23 +12,20 @@ LoginDialog::LoginDialog(QWidget *parent) :
 LoginDialog::~LoginDialog()
 {
     qDebug()<<"destroy login dialog";
+    disconnect(client,nullptr,this,nullptr);
     delete ui;
 }
 
 void LoginDialog::on_buttonBox_accepted()
 {
-    ClientCore* client=new ClientCore(ui->hostNameEdit->text(),ui->portSelection->value());
+    client=new ClientCore(ui->hostNameEdit->text(),ui->portSelection->value());
+    client->userLogin(ui->userNameEdit->text(),ui->passwordEdit->text());
+
+    connect(client,&ClientCore::initSuccess,this,[this](bool flag){
+            emit LoginSuccess(client);
+    });
     if(client->connectServer()){
         qDebug()<<"success";
     }
-    client->userLogin(ui->userNameEdit->text(),ui->passwordEdit->text());
-    connect(client,&ClientCore::initSuccess,[this,client](bool flag){
-        if(flag){
-            emit LoginSuccess(client);
-        }else{
-            delete client;
-            emit LoginSuccess(nullptr);
-        }
-    });   //TODO: show Error
 }
 

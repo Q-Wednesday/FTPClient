@@ -9,8 +9,8 @@
 #include<QFile>
 #define MAX_MESSAGE_LEN 1024
 #define MAX_DATA_SIZE 8192
-enum ConnectionState{NOTCONNECTED,CONNECTED,NOTLOGIN,LOGIN,PORTMODE,PASVMODE,REQTYPE,REQPORT,REQPASV};
-enum RequestState{NOTHING,REQLIST,REQCWD,REQRETR,REQSTOR,REQRNFN,REQRNTO,REQRMD,REQMKD};
+enum ConnectionState{NOTCONNECTED,CONNECTED,NOTLOGIN,LOGIN,PORTMODE,PASVMODE,REQPORT,REQPASV};
+enum RequestState{NOTHING,REQTYPE,REQLIST,REQCWD,REQRETR,REQSTOR,REQRNFN,REQRNTO,REQRMD,REQMKD,REQPWD};
 class ClientCore : public QObject
 {
     Q_OBJECT
@@ -45,21 +45,28 @@ signals:
     void serverReponse(QString);
     void retrSuccess();
     void storSuccess();
-    void rntoSuccess();
-    void rmdSuccess();
-    void mkdSuccess();
-    void quitSuccess();
+    void rntoSuccess();//重命名成功发送
+    void rmdSuccess();//移除目录成功时发送
+    void mkdSuccess();//创建目录成功时发送
+    void quitSuccess();//收到221成功退出时发送
+    void remoteClosed();//检测到远程关闭时发送
 private:
     void handleResponse(QString& response);
+    void sendMessage(QString& message);
+    void handleFileCommand();
 private slots:
-    void connectionSuccess();
+
     void receiveMessage();
     void receiveFile();
+
+public slots:
+    void setPassive(bool);
 private:
     QTcpSocket* connectionSocket;
     QTcpSocket* fileSocket;
     QTcpServer* tcpServer;//用于port模式接受连接
     QHostAddress serverHost;
+    QHostAddress clientAddress;
     QString hostName;//用户传入的名称
     int serverPort;
     bool connected;
@@ -73,6 +80,7 @@ private:
     QString sourceDir;//标识文件传输的源文件夹
     QString targetName;//标识重命名的目标名称
     QFile* filePointer;
+    bool passive;
 };
 
 #endif // CLIENTCORE_H
