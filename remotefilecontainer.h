@@ -9,7 +9,8 @@ class RemoteFileContainer : public FileContainer
 
 public:
     explicit RemoteFileContainer(QWidget *parent = nullptr);
-
+protected:
+    void contextMenuEvent(QContextMenuEvent*);
 private:
     void dropEvent(QDropEvent*);
 };

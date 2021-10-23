@@ -23,7 +23,7 @@ protected:
     void mousePressEvent(QMouseEvent*);
     void mouseMoveEvent(QMouseEvent*);
     void performDrag();
-    void contextMenuEvent(QContextMenuEvent*);
+
 protected:
     QPoint startPos;
 };

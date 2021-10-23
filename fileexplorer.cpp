@@ -13,18 +13,19 @@ FileExplorer::FileExplorer(QWidget *parent) :
     doubleCliked(false)
 {
     ui->setupUi(this);
+    //添加远程文件浏览器和本地文件浏览器
     ui->fileListLayout->addWidget(remoteFileContainer);
     ui->fileListLayout->addWidget(localFileContainer);
-    connect(ui->remoteDir,&QListWidget::itemClicked,this,&FileExplorer::changeRemoteWorkDir);
     showLocalFileInfo();
-   // connect(ui->localDir,&QListWidget::itemClicked,this,&FileExplorer::changeLocalWorkDir);
+    //连接信号槽实现拖拽和点击的功能
+    connect(ui->remoteDir,&QListWidget::itemClicked,this,&FileExplorer::changeRemoteWorkDir);   
     connect(ui->localDir,&QListWidget::itemClicked,[this](QListWidgetItem* item){
         qDebug()<<"doubleclicked:"<<doubleCliked;
         if(!doubleCliked){
             QTimer::singleShot(100,this,[this,item]{changeLocalWorkDir(item);});
 
         }
-    });
+    }); 
     connect(remoteFileContainer,&QListWidget::itemDoubleClicked,this,&FileExplorer::openRemoteFile);
     connect(localFileContainer,&QListWidget::itemDoubleClicked,this,&FileExplorer::openLocalFile);
     connect(localFileContainer,&LocalFileContainer::dragIn,this,&FileExplorer::downloadFile);
@@ -33,7 +34,7 @@ FileExplorer::FileExplorer(QWidget *parent) :
     connect(remoteFileContainer,&FileContainer::removeDir,this,&FileExplorer::removeDir);
     connect(remoteFileContainer,&FileContainer::makeDir,this,&FileExplorer::makeDir);
 
-    //双击可以输入路径
+    //双击可以输入路径，为了处理双击的时候不处理单击需要借用一个变量doubleClicked
     connect(ui->localDir,&QListWidget::itemDoubleClicked,this,[this](QListWidgetItem* item){
         qDebug()<<"double click";
         doubleCliked=true;
@@ -50,8 +51,8 @@ FileExplorer::~FileExplorer()
     delete ui;
 }
 
-
 void FileExplorer::bindClient(ClientCore* clientLogin){
+    //绑定客户端，如果客户端登录失败则要求重新连接
     if(clientLogin->getState()<LOGIN){
         ui->reconnectButton->setEnabled(true);
         ui->hintBox->setText("Error: Please reconnect to the server!");
@@ -61,25 +62,31 @@ void FileExplorer::bindClient(ClientCore* clientLogin){
         ui->hintBox->setText("Welcome!");
     }
     client=clientLogin;
+
+    //连接信号槽接收客户端处理各种命令的信号
     connect(client,&ClientCore::fileInfoGeted,this,&FileExplorer::showRemoteFileInfo);
     connect(client,&ClientCore::pwdGeted,this,&FileExplorer::showRemoteWorkDir);
     connect(client,&ClientCore::serverReponse,[this](QString response){
         ui->serverResponse->append(response);
     });
     connect(client,&ClientCore::retrSuccess,this,&FileExplorer::downloadSuccess);
-    connect(client,&ClientCore::storSuccess,[this]{
+    connect(client,&ClientCore::storSuccess,this,[this]{
+        ui->hintBox->setText("STOR Success");
         client->commandPWD();
     });
-    connect(client,&ClientCore::rntoSuccess,[this]{
+    connect(client,&ClientCore::rntoSuccess,this,[this]{
+        ui->hintBox->setText("Rename Success");
         client->commandPWD();
     });
-    connect(client,&ClientCore::rmdSuccess,[this]{
+    connect(client,&ClientCore::rmdSuccess,this,[this]{
+        ui->hintBox->setText("RMD Success");
         client->commandPWD();
     });
-    connect(client,&ClientCore::mkdSuccess,[this]{
+    connect(client,&ClientCore::mkdSuccess,this,[this]{
+        ui->hintBox->setText("MKD Success");
         client->commandPWD();
     });
-    connect(client,&ClientCore::quitSuccess,[this]{
+    connect(client,&ClientCore::quitSuccess,this,[this]{
         disconnect(client,nullptr,this,nullptr);
         emit sessionClosed();
     });
@@ -87,7 +94,7 @@ void FileExplorer::bindClient(ClientCore* clientLogin){
         ui->reconnectButton->setEnabled(true);
         ui->hintBox->setText("Error: Please reconnect to the server!");
     });
-    connect(client,&ClientCore::initSuccess,[this](bool flag){
+    connect(client,&ClientCore::initSuccess,this,[this](bool flag){
             if(flag==false){
                 ui->reconnectButton->setEnabled(true);
                 ui->hintBox->setText("Error: Please reconnect to the server!");
@@ -97,7 +104,12 @@ void FileExplorer::bindClient(ClientCore* clientLogin){
             }
     });
     connect(ui->isPassive,&QCheckBox::stateChanged,client,&ClientCore::setPassive);
-
+    connect(client,&ClientCore::commandFailed,this,[this](QString info){
+        if(info.isEmpty())
+            ui->hintBox->setText("Command Failed.\nCheck the response on the left for information");
+        else
+            ui->hintBox->setText(info);
+    });
 }
 
 void FileExplorer::showRemoteFileInfo(QString infoReceived){
@@ -112,16 +124,19 @@ void FileExplorer::showRemoteFileInfo(QString infoReceived){
             QListWidgetItem* temp=new QListWidgetItem(info.split(' ').last());
             temp->setIcon(QIcon(":/icons/file"));
             temp->setData(5,"file");
+            temp->setData(Qt::ToolTipRole,info);
             remoteFileContainer->addItem(temp);
         }else if(info[0]=='d'){
             QListWidgetItem* temp=new QListWidgetItem(info.split(' ').last());
             temp->setIcon(QIcon(":/icons/dir"));
             temp->setData(5,"dir");
+            temp->setData(Qt::ToolTipRole,info);
             remoteFileContainer->addItem(temp);
         }else if(info[0]=='l'){
             QListWidgetItem* temp=new QListWidgetItem(info.split(' ').last());
             temp->setIcon(QIcon(":/icons/link"));
             temp->setData(5,"link");
+            temp->setData(Qt::ToolTipRole,info);
             remoteFileContainer->addItem(temp);
         }else{
             //其他类型暂时不支持解析
@@ -142,13 +157,10 @@ void FileExplorer::showRemoteWorkDir(QString workdir){
         ui->remoteDir->addItem(temp);
     }
     client->commandLIST();
-
 }
 
 void FileExplorer::changeRemoteWorkDir(QListWidgetItem* item){
-
     client->commandCWD(item->data(256).toString());
-
 }
 void FileExplorer::showLocalFileInfo(QString localPath){
 
@@ -175,12 +187,7 @@ void FileExplorer::showLocalFileInfo(QString localPath){
         }
         localFileContainer->addItem(temp);
     }
-    //临时测试加的
-    for(auto filename:localDir.entryList()){
-        //qDebug()<<filename;
-    }
 
-    qDebug()<<"localPath:"<<localPath;
     auto dirs=localPath.split('/');
     QString prefix="";
     if(localPath=='/'){
@@ -206,36 +213,35 @@ void FileExplorer::showLocalFileInfo(QString localPath){
 }
 
 void FileExplorer::changeLocalWorkDir(QListWidgetItem* item){
-    qDebug()<<"call change local"<<doubleCliked;
     if(!doubleCliked)
         showLocalFileInfo(item->data(256).toString());
     else doubleCliked=false;
 }
 
 void FileExplorer::openRemoteFile(QListWidgetItem* item){
-    qDebug()<<"double click";
-    //目前只处理打开文件夹,之后可能要支持打开软链接
     if(item->data(5).toString()=="dir"){
         client->commandCWD(item->data(0).toString());
     }
 
 }
 void FileExplorer::openLocalFile(QListWidgetItem* item){
-    qDebug()<<"doubleclick";
     if(item->data(5).toString()=="dir"){
         showLocalFileInfo(localWorkDir+'/'+item->data(0).toString());
     }
 }
 
 void FileExplorer:: downloadFile(QString sourcefile){
+    ui->hintBox->setText(QString("Downloading %1").arg(sourcefile));
     client->commandRETR(sourcefile,localWorkDir);
 }
 
 void FileExplorer::downloadSuccess(){
+    ui->hintBox->setText("Download file successfully");
     showLocalFileInfo(localWorkDir);
 }
 
 void  FileExplorer::uploadFile(QString sourcefile){
+    ui->hintBox->setText(QString("Uploading %1").arg(sourcefile));
     client->commandSTOR(sourcefile,localWorkDir);
 }
 

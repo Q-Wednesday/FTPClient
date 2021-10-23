@@ -40,16 +40,17 @@ public:
 signals:
     void initSuccess(bool);//所有初始连接步骤完成后才会发送，false为某一步失败
     void fileInfoGeted(QString);
-    void pwdGeted(QString);
-    void cwdSuccess(bool);
-    void serverReponse(QString);
-    void retrSuccess();
-    void storSuccess();
+    void pwdGeted(QString);//当前工作目录信息
+    void cwdSuccess(bool);//工作目录切换成功发送
+    void serverReponse(QString);//发送收到的response
+    void retrSuccess();//接收文件成功发送
+    void storSuccess();//传输文件成功发送
     void rntoSuccess();//重命名成功发送
     void rmdSuccess();//移除目录成功时发送
     void mkdSuccess();//创建目录成功时发送
     void quitSuccess();//收到221成功退出时发送
     void remoteClosed();//检测到远程关闭时发送
+    void commandFailed(QString);//当命令执行失败发送
 private:
     void handleResponse(QString& response);
     void sendMessage(QString& message);
