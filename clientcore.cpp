@@ -31,7 +31,7 @@ bool ClientCore::connectServer(){
     //由文件浏览器和登录界面等调用，进行服务器的连接步骤
     QHostInfo info=QHostInfo::fromName(hostName);
     connectionState=NOTCONNECTED;
-
+    connected=false;
     //连接直到连接上一个地址为止
     for(auto address:info.addresses()){
         if(address.protocol()!=QAbstractSocket::IPv4Protocol)continue;
@@ -43,7 +43,6 @@ bool ClientCore::connectServer(){
             break;
         }
     }
-
     if(connected==false)
         emit initSuccess(false);//连接失败直接告知
     return connected;
@@ -52,7 +51,6 @@ bool ClientCore::connectServer(){
 void ClientCore::sendMessage(QString &message){
     //发送消息的函数
     int n=connectionSocket->write(message.toLocal8Bit());
-    //qDebug()<<"send"<<message;
     if(n==-1) emit remoteClosed();//如果发送失败直接告知已经失去连接
 
 }
@@ -73,7 +71,6 @@ void ClientCore::receiveMessage(){
             tempList.append(text);
             QString message=tempList.join("/r/n");
             tempList.clear();
-            //qDebug()<<text<<" "<<message;
             handleResponse(message);
 
         }else{
@@ -89,17 +86,14 @@ void ClientCore::receiveFile(){
 
     if(requestState==REQLIST){
         QString recv_text=QString::fromLocal8Bit(fileSocket->readAll());
-        //qDebug()<<"received text:"<<recv_text;
         requestState=NOTHING;
         fileSocket->close();
         emit fileInfoGeted(recv_text);
     }
     else if(requestState==REQRETR){ //由于接收的文件会较大，要做不同的处理
-        //qDebug()<<"receive file signal";
         while (true) {
             QByteArray data=fileSocket->read(MAX_DATA_SIZE);
             int m=filePointer->write(data);
-            //qDebug()<<"write"<<m;
             if(data.size()==0)break;           
         }
     }
@@ -139,21 +133,17 @@ void ClientCore::handleResponse(QString &response){
         switch (requestState) {
             case REQRETR:
             case REQLIST:
-                //qDebug()<<"start transfer";
                 break;
             case REQSTOR:{
                 QFile file(sourceDir+'/'+sourceFile);
-                //qDebug()<<"file info:"<<file.fileName()<<file.exists()<<file.size();
                 file.open(QIODevice::ReadOnly);
                 char buf[MAX_DATA_SIZE];
                 while(true){
                     int n=file.read(buf,MAX_DATA_SIZE);
                     if(n==0)break;
                     int m=fileSocket->write(buf,n);
-                    //qDebug()<<"stor m:"<<m<<" n:"<<n;
                 }
                 fileSocket->close();
-                //qDebug()<<"stor file";
                 break;
             }
         }
@@ -173,10 +163,8 @@ void ClientCore::handleResponse(QString &response){
             auto list=address.split(',');
             int port=list[4].toInt()*256+list[5].toInt();
             address=list.mid(0,4).join('.');
-            //qDebug()<<address<<port;
             fileSocket->connectToHost(QHostAddress(address),port);
             int c=fileSocket->waitForConnected();
-            //qDebug()<<"filesocket connected:"<<c;
             if(c){
                 connectionState=PASVMODE;
                 handleFileCommand();
@@ -202,7 +190,6 @@ void ClientCore::handleResponse(QString &response){
             case REQCWD:{
                 requestState=NOTHING;
                 emit cwdSuccess(true);
-                qDebug()<<"cwd success";
                 commandPWD();//进行一次拉取，会成功重新拉取文件
                 break;
             }
@@ -308,7 +295,7 @@ void ClientCore::commandTYPE(){
 }
 
 ClientCore::~ClientCore(){
-    qDebug()<<"client destroyed";
+
 }
 
 ConnectionState ClientCore::getState(){

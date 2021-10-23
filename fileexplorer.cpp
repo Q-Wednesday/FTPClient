@@ -20,7 +20,6 @@ FileExplorer::FileExplorer(QWidget *parent) :
     //连接信号槽实现拖拽和点击的功能
     connect(ui->remoteDir,&QListWidget::itemClicked,this,&FileExplorer::changeRemoteWorkDir);   
     connect(ui->localDir,&QListWidget::itemClicked,this,[this](QListWidgetItem* item){
-        qDebug()<<"doubleclicked:"<<doubleCliked;
         if(!doubleCliked){
             QTimer::singleShot(100,this,[this,item]{changeLocalWorkDir(item);});
 
@@ -36,7 +35,6 @@ FileExplorer::FileExplorer(QWidget *parent) :
 
     //双击可以输入路径，为了处理双击的时候不处理单击需要借用一个变量doubleClicked
     connect(ui->localDir,&QListWidget::itemDoubleClicked,this,[this](QListWidgetItem* item){
-        qDebug()<<"double click";
         doubleCliked=true;
         bool ok;
         QString target=QInputDialog::getText(this,tr("Change Directory"),tr("Enter Path"),QLineEdit::Normal,item->data(256).toString(),&ok);
@@ -152,7 +150,6 @@ void FileExplorer::showRemoteWorkDir(QString workdir){
     for(auto dir:dirs){
         QListWidgetItem* temp=new QListWidgetItem(QString("%1/").arg(dir));
         prefix+=dir+'/';
-        //qDebug()<<"remote prefix"<<prefix;
         temp->setData(256,prefix);
         ui->remoteDir->addItem(temp);
     }
@@ -171,11 +168,8 @@ void FileExplorer::showLocalFileInfo(QString localPath){
     if(!localDir.exists())return;
     localWorkDir=localPath;//改变工作目录
     localFileContainer->clear();
-    qDebug()<<"local path:"<<localPath;
     for(auto fileInfo:localDir.entryInfoList()){
-        qDebug()<<fileInfo.fileName();
         if(fileInfo.fileName()=="." || fileInfo.fileName()=="..")continue;
-        //qDebug()<<fileInfo.absoluteFilePath();
         QListWidgetItem* temp=new QListWidgetItem(fileInfo.fileName());
         if(fileInfo.isDir()){
             temp->setIcon(QIcon(":/icons/dir"));

@@ -17,6 +17,10 @@
    <iconset resource="src.qrc">
     <normaloff>:/icons/ftp</normaloff>:/icons/ftp</iconset>
   </property>
+  <property name="styleSheet">
+   <string notr="true">border-color: rgb(170, 255, 255);
+background-color: rgb(247, 247, 247);</string>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
@@ -28,7 +32,7 @@
        </sizepolicy>
       </property>
       <property name="text">
-       <string>Login</string>
+       <string>New Session</string>
       </property>
      </widget>
     </item>

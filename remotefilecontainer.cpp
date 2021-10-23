@@ -13,7 +13,6 @@ void RemoteFileContainer::dropEvent(QDropEvent *event){
 
     QListWidget* source=qobject_cast<QListWidget*>(event->source());
     if(source && source!=this){
-        qDebug()<<"item data:"<<data->text();
         emit dragIn(data->text());
     }
 }
@@ -25,7 +24,6 @@ void RemoteFileContainer::contextMenuEvent(QContextMenuEvent *event){
             auto renameAction=new QAction(tr("&Rename"), menu);
             menu->addAction(renameAction);
             connect(renameAction,&QAction::triggered,this,[this,item]{
-                qDebug()<<"rename "+item->data(0).toString();
                 emit renameFile(item->data(0).toString());
             });
         }

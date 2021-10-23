@@ -22,7 +22,6 @@ void MainWindow::on_loginButton_clicked()
     dialog=new LoginDialog(this);
     connect(dialog,&LoginDialog::LoginSuccess,this,&MainWindow::newSession);
     dialog->exec();
-    //sessionTab->removeTab(1);
 }
 
 void MainWindow::newSession(ClientCore* client){
@@ -36,7 +35,6 @@ void MainWindow::closeSession(int index){
     //关闭连接和tab页。
     FileExplorer* fileExplorer=qobject_cast<FileExplorer*>(sessionTab->widget(index));
     connect(fileExplorer,&FileExplorer::sessionClosed,[this,index,fileExplorer]{
-        qDebug()<<"close tab:"<<index;
         sessionTab->removeTab(index);
         fileExplorer->deleteLater();
     });

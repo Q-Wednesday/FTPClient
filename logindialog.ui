@@ -7,8 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>422</width>
-    <height>477</height>
+    <height>371</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
@@ -16,8 +22,8 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>360</y>
+     <x>120</x>
+     <y>330</y>
      <width>291</width>
      <height>31</height>
     </rect>
@@ -32,10 +38,10 @@
   <widget class="QLineEdit" name="userNameEdit">
    <property name="geometry">
     <rect>
-     <x>160</x>
-     <y>250</y>
-     <width>113</width>
-     <height>23</height>
+     <x>170</x>
+     <y>190</y>
+     <width>151</width>
+     <height>31</height>
     </rect>
    </property>
    <property name="text">
@@ -45,10 +51,10 @@
   <widget class="QLineEdit" name="passwordEdit">
    <property name="geometry">
     <rect>
-     <x>160</x>
-     <y>300</y>
-     <width>113</width>
-     <height>23</height>
+     <x>170</x>
+     <y>240</y>
+     <width>151</width>
+     <height>31</height>
     </rect>
    </property>
    <property name="echoMode">
@@ -59,7 +65,7 @@
    <property name="geometry">
     <rect>
      <x>60</x>
-     <y>250</y>
+     <y>190</y>
      <width>81</width>
      <height>21</height>
     </rect>
@@ -72,7 +78,7 @@
    <property name="geometry">
     <rect>
      <x>60</x>
-     <y>300</y>
+     <y>240</y>
      <width>81</width>
      <height>21</height>
     </rect>
@@ -84,8 +90,8 @@
   <widget class="QLineEdit" name="hostNameEdit">
    <property name="geometry">
     <rect>
-     <x>50</x>
-     <y>122</y>
+     <x>60</x>
+     <y>130</y>
      <width>181</width>
      <height>31</height>
     </rect>
@@ -98,7 +104,7 @@
    <property name="geometry">
     <rect>
      <x>260</x>
-     <y>123</y>
+     <y>130</y>
      <width>61</width>
      <height>31</height>
     </rect>
@@ -113,8 +119,8 @@
   <widget class="QLabel" name="label_3">
    <property name="geometry">
     <rect>
-     <x>50</x>
-     <y>90</y>
+     <x>60</x>
+     <y>100</y>
      <width>101</width>
      <height>21</height>
     </rect>
