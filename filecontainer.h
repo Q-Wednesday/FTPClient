@@ -18,7 +18,6 @@ signals:
     void makeDir();
 protected:
     void dragEnterEvent(QDragEnterEvent*);
-    //void dropEvent(QDropEvent *event);//个性化的行为，不重写
     void dragMoveEvent(QDragMoveEvent*);
     void mousePressEvent(QMouseEvent*);
     void mouseMoveEvent(QMouseEvent*);

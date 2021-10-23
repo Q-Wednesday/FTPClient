@@ -15,7 +15,7 @@ public:
     explicit LoginDialog(QWidget *parent = nullptr);
     ~LoginDialog();
 signals:
-    void LoginSuccess(ClientCore*);//失败则发送nullptr
+    void LoginSuccess(ClientCore*);
 
 private slots:
     void on_buttonBox_accepted();
