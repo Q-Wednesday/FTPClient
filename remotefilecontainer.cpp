@@ -33,6 +33,11 @@ void RemoteFileContainer::contextMenuEvent(QContextMenuEvent *event){
             connect(deleteAction,&QAction::triggered,this,[this,item]{
                 emit removeDir(item->data(0).toString());
             });
+            auto renameAction=new QAction(tr("&Rename"), menu);
+            menu->addAction(renameAction);
+            connect(renameAction,&QAction::triggered,this,[this,item]{
+                emit renameFile(item->data(0).toString());
+            });
         }
     }else{
         auto makeDirAction=new QAction(tr("&New Directory"),menu);

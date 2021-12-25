@@ -8,7 +8,7 @@
 #include<QTcpServer>
 #include<QFile>
 #define MAX_MESSAGE_LEN 1024
-#define MAX_DATA_SIZE 8192
+#define MAX_DATA_SIZE 819200
 enum ConnectionState{NOTCONNECTED,CONNECTED,NOTLOGIN,LOGIN,PORTMODE,PASVMODE,REQPORT,REQPASV};
 enum RequestState{NOTHING,REQTYPE,REQLIST,REQCWD,REQRETR,REQSTOR,REQRNFN,REQRNTO,REQRMD,REQMKD,REQPWD};
 class ClientCore : public QObject
@@ -81,6 +81,7 @@ private:
     QString sourceDir;//标识文件传输的源文件夹
     QString targetName;//标识重命名的目标名称
     QFile* filePointer;
+    QString listText;
     bool passive;
 };
 

@@ -85,10 +85,10 @@ void ClientCore::receiveFile(){
         return;
 
     if(requestState==REQLIST){
-        QString recv_text=QString::fromLocal8Bit(fileSocket->readAll());
+        listText=QString::fromLocal8Bit(fileSocket->readAll());
         requestState=NOTHING;
         fileSocket->close();
-        emit fileInfoGeted(recv_text);
+
     }
     else if(requestState==REQRETR){ //由于接收的文件会较大，要做不同的处理
         while (true) {
@@ -242,7 +242,14 @@ void ClientCore::handleFileCommand(){
             if(filePath.length())
                 message=QString("LIST %1\r\n").arg(filePath);
             else message=QString("LIST\r\n");
+            listText="";
             sendMessage(message);
+            connect(fileSocket,&QTcpSocket::disconnected,[this]{
+
+                requestState=NOTHING;
+                //delete filePointer;
+                emit fileInfoGeted(listText);
+            });
             break;
         }
         case REQRETR:{
@@ -255,7 +262,7 @@ void ClientCore::handleFileCommand(){
             connect(fileSocket,&QTcpSocket::disconnected,[this]{
                 filePointer->close();
                 requestState=NOTHING;
-                delete filePointer;
+                //delete filePointer;
                 emit retrSuccess();
             });
             sendMessage(message);
@@ -314,7 +321,7 @@ void ClientCore::commandPORT(){
         if(requestState==REQRETR){
             connect(fileSocket,&QTcpSocket::disconnected,[this]{
                 filePointer->close();
-                delete filePointer;
+                //delete filePointer;
                 emit retrSuccess();
             });
         }
